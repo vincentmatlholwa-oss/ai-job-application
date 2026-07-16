@@ -1,0 +1,21 @@
+{
+  "name": "ai-job-application",
+  "version": "1.0.0",
+  "description": "AI-powered auto job application assistant by Vincent Matlholwa",
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "client": "cd frontend && npm run dev",
+    "server": "cd backend && node server.js",
+    "build": "cd frontend && npm run build",
+    "start": "NODE_ENV=production node backend/server.js",
+    "install-all": "cd frontend && npm install && cd ../backend && npm install"
+  },
+  "dependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "author": "Vincent Matlholwa",
+  "license": "MIT"
+}
