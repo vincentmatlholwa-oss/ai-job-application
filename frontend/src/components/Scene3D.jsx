@@ -1,6 +1,16 @@
-import { useMemo } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 
 export default function Scene3D() {
+  const [reducedMotion, setReducedMotion] = useState(false)
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
+    setReducedMotion(mq.matches)
+    const handler = (e) => setReducedMotion(e.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
+
+  if (reducedMotion) return <div className="grid-floor" />
   const particles = useMemo(() =>
     Array.from({ length: 30 }, (_, i) => ({
       id: i,

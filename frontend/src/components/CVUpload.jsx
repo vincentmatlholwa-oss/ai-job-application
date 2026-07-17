@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react'
 import { useDropzone } from 'react-dropzone'
-import { FiUpload, FiFileText, FiCheck, FiUser, FiMail, FiPhone, FiMapPin, FiBriefcase, FiBookOpen, FiAward, FiGlobe, FiClock } from 'react-icons/fi'
+import { toast } from 'react-toastify'
+import { FiUpload, FiFileText, FiCheck, FiUser, FiMail, FiPhone, FiMapPin, FiBriefcase, FiBookOpen, FiAward, FiGlobe, FiClock, FiSkipForward } from 'react-icons/fi'
 
 export default function CVUpload({ onUpload, cvData }) {
   const [parsedData, setParsedData] = useState(null)
@@ -37,6 +38,7 @@ export default function CVUpload({ onUpload, cvData }) {
       setParsedData(data)
     } catch (err) {
       setParsedData(null)
+      toast.error('Failed to parse CV. Please try a different file.', { theme: 'dark' })
     } finally {
       setIsParsing(false)
     }
@@ -55,6 +57,15 @@ export default function CVUpload({ onUpload, cvData }) {
   })
 
   const handleManualSubmit = () => {
+    if (!manualForm.fullName.trim()) {
+      toast.warning('Please enter your full name', { theme: 'dark' })
+      return
+    }
+    if (!manualForm.email.trim() || !manualForm.email.includes('@')) {
+      toast.warning('Please enter a valid email address', { theme: 'dark' })
+      return
+    }
+
     const skillsArr = manualForm.skills.split(',').map(s => s.trim()).filter(Boolean)
     const eduArr = manualForm.education.split('\n').map(e => e.trim()).filter(Boolean)
     const langArr = manualForm.languages.split(',').map(l => l.trim()).filter(Boolean)
@@ -141,6 +152,21 @@ export default function CVUpload({ onUpload, cvData }) {
           >
             <FiUser className="w-5 h-5" />
             Enter Details Manually
+          </button>
+
+          <button
+            onClick={() => {
+              setManualMode(true)
+              setManualForm({
+                fullName: '', email: '', phone: '', location: '',
+                currentRole: '', experience: '', education: '',
+                skills: '', languages: '', certifications: '',
+              })
+            }}
+            className="w-full flex items-center justify-center gap-2 py-3 text-white/40 hover:text-white/60 text-sm transition-colors"
+          >
+            <FiSkipForward className="w-4 h-4" />
+            I don't have a CV yet — start from scratch
           </button>
         </>
       )}

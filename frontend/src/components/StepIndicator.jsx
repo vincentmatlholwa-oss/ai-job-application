@@ -6,7 +6,7 @@ export default function StepIndicator({ steps, currentStep, onStepClick }) {
       {steps.map((step, index) => {
         const isCompleted = index < currentStep
         const isActive = index === currentStep
-        const isClickable = index < currentStep
+        const isClickable = index <= currentStep
 
         return (
           <div key={step} className="flex items-center gap-2 sm:gap-4 shrink-0">

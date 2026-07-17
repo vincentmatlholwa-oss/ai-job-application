@@ -12,9 +12,14 @@ const STAGES = [
 
 export default function KanbanTracker({ applications }) {
   const [tracker, setTracker] = useState(() => {
-    const saved = {}
-    applications.forEach((app, i) => {
-      saved[app.job.id] = {
+    const key = 'jobai_tracker'
+    try {
+      const saved = JSON.parse(localStorage.getItem(key))
+      if (saved && Object.keys(saved).length > 0) return saved
+    } catch {}
+    const initial = {}
+    applications.forEach((app) => {
+      initial[app.job.id] = {
         ...app,
         stage: 'saved',
         appliedDate: null,
@@ -23,28 +28,33 @@ export default function KanbanTracker({ applications }) {
         createdAt: new Date().toISOString(),
       }
     })
-    return saved
+    return initial
   })
 
   const [activeStage, setActiveStage] = useState('all')
   const [selectedCard, setSelectedCard] = useState(null)
 
   const moveJob = (jobId, newStage) => {
-    setTracker(prev => ({
-      ...prev,
-      [jobId]: {
-        ...prev[jobId],
-        stage: newStage,
-        appliedDate: newStage === 'applied' ? new Date().toISOString() : prev[jobId].appliedDate,
+    setTracker(prev => {
+      const next = {
+        ...prev,
+        [jobId]: {
+          ...prev[jobId],
+          stage: newStage,
+          appliedDate: newStage === 'applied' ? new Date().toISOString() : prev[jobId].appliedDate,
+        }
       }
-    }))
+      localStorage.setItem('jobai_tracker', JSON.stringify(next))
+      return next
+    })
   }
 
   const addNote = (jobId, note) => {
-    setTracker(prev => ({
-      ...prev,
-      [jobId]: { ...prev[jobId], notes: note }
-    }))
+    setTracker(prev => {
+      const next = { ...prev, [jobId]: { ...prev[jobId], notes: note } }
+      localStorage.setItem('jobai_tracker', JSON.stringify(next))
+      return next
+    })
   }
 
   const stageCounts = STAGES.reduce((acc, s) => {
@@ -98,7 +108,7 @@ export default function KanbanTracker({ applications }) {
                 <div key={s.id} className="flex items-center">
                   <button
                     onClick={() => moveJob(job.job.id, s.id)}
-                    className={`w-8 h-8 sm:w-6 sm:h-6 rounded-full flex items-center justify-center transition-all ${
+                    className={`w-9 h-9 sm:w-7 sm:h-7 rounded-full flex items-center justify-center transition-all ${
                       job.stage === s.id
                         ? `${s.color} text-white scale-110`
                         : 'bg-white/5 text-white/20 hover:bg-white/10'

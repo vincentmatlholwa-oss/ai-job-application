@@ -18,9 +18,24 @@ export default function JobSearchResults({
   isGenerating,
 }) {
   const [filter, setFilter] = useState('all')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [sortBy, setSortBy] = useState('match')
   const hasSearched = jobs.length > 0 || isSearching
 
-  const filteredJobs = filter === 'all' ? jobs : jobs.filter(j => j.matchLevel === filter)
+  let filteredJobs = filter === 'all' ? jobs : jobs.filter(j => j.matchLevel === filter)
+  if (searchQuery.trim()) {
+    const q = searchQuery.toLowerCase()
+    filteredJobs = filteredJobs.filter(j =>
+      j.title.toLowerCase().includes(q) ||
+      j.company.toLowerCase().includes(q) ||
+      (j.requiredSkills || []).some(s => s.toLowerCase().includes(q))
+    )
+  }
+  if (sortBy === 'match') filteredJobs.sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0))
+  else if (sortBy === 'salary') filteredJobs.sort((a, b) => {
+    const extract = (s) => parseInt((s || '').replace(/[^0-9]/g, '')) || 0
+    return extract(b.salary) - extract(a.salary)
+  })
 
   return (
     <div className="space-y-6">
@@ -103,7 +118,25 @@ export default function JobSearchResults({
               ))}
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
+              <div className="relative">
+                <FiSearch className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
+                <input
+                  type="text"
+                  placeholder="Search jobs..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  className="input-field pl-9 py-2 text-sm w-48"
+                />
+              </div>
+              <select
+                value={sortBy}
+                onChange={e => setSortBy(e.target.value)}
+                className="input-field py-2 text-sm bg-dark-800"
+              >
+                <option value="match">Sort: Match</option>
+                <option value="salary">Sort: Salary</option>
+              </select>
               <button onClick={onSelectAll} className="btn-secondary text-sm py-2 px-4">
                 {selectedJobs.length === jobs.length ? 'Deselect All' : 'Select All'}
               </button>
@@ -113,7 +146,7 @@ export default function JobSearchResults({
             </div>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-4 pb-20">
             {filteredJobs.map(job => {
               const isSelected = selectedJobs.some(j => j.id === job.id)
               const matchStyle = MATCH_COLORS[job.matchLevel] || MATCH_COLORS.good

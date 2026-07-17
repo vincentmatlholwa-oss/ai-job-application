@@ -144,24 +144,35 @@ export default function Chatbot() {
   }
 
   const renderMarkdown = (text) => {
+    const renderInline = (str) => {
+      const parts = []
+      const regex = /(\*\*(.*?)\*\*|`(.*?)`)/g
+      let lastIndex = 0
+      let match
+      while ((match = regex.exec(str)) !== null) {
+        if (match.index > lastIndex) parts.push(str.slice(lastIndex, match.index))
+        if (match[1] && match[2]) parts.push(<strong key={`b${match.index}`} className="text-white">{match[2]}</strong>)
+        else if (match[1] && match[3]) parts.push(<code key={`c${match.index}`} className="bg-white/10 px-1.5 py-0.5 rounded text-primary-300 text-xs">{match[3]}</code>)
+        lastIndex = match.index + match[0].length
+      }
+      if (lastIndex < str.length) parts.push(str.slice(lastIndex))
+      return parts
+    }
+
     return text.split('\n').map((line, i) => {
       if (line.startsWith('**') && line.endsWith('**')) {
         return <p key={i} className="font-bold text-white mt-2">{line.replace(/\*\*/g, '')}</p>
       }
 
-      let processed = line
-        .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>')
-        .replace(/`(.*?)`/g, '<code class="bg-white/10 px-1.5 py-0.5 rounded text-primary-300 text-xs">$1</code>')
-
       if (line.startsWith('- ')) {
-        return <p key={i} className="ml-3 text-white/60" dangerouslySetInnerHTML={{ __html: '  \u2022 ' + processed.slice(2) }} />
+        return <p key={i} className="ml-3 text-white/60">{'  \u2022 '}{renderInline(line.slice(2))}</p>
       }
       if (line.match(/^\d+\./)) {
-        return <p key={i} className="ml-3 text-white/60" dangerouslySetInnerHTML={{ __html: processed }} />
+        return <p key={i} className="ml-3 text-white/60">{renderInline(line)}</p>
       }
       if (line === '') return <br key={i} />
 
-      return <p key={i} className="text-white/60" dangerouslySetInnerHTML={{ __html: processed }} />
+      return <p key={i} className="text-white/60">{renderInline(line)}</p>
     })
   }
 

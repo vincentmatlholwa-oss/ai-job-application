@@ -9,14 +9,26 @@ export default function Dashboard({ applications, selectedJobs, profile, onViewC
   const [activeJob, setActiveJob] = useState(0)
   const [activeTab, setActiveTab] = useState('cover')
   const [copiedField, setCopiedField] = useState(null)
+  const [showInterviewDropdown, setShowInterviewDropdown] = useState(false)
   const [jobStatuses, setJobStatuses] = useState(
     selectedJobs.reduce((acc, job) => ({ ...acc, [job.id]: 'ready' }), {})
   )
 
-  const handleCopy = (text, fieldId) => {
-    navigator.clipboard.writeText(text)
-    setCopiedField(fieldId)
-    setTimeout(() => setCopiedField(null), 2000)
+  const handleCopy = async (text, fieldId) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopiedField(fieldId)
+      setTimeout(() => setCopiedField(null), 2000)
+    } catch {
+      const ta = document.createElement('textarea')
+      ta.value = text
+      document.body.appendChild(ta)
+      ta.select()
+      document.execCommand('copy')
+      document.body.removeChild(ta)
+      setCopiedField(fieldId)
+      setTimeout(() => setCopiedField(null), 2000)
+    }
   }
 
   const handleSendEmail = (app) => {
@@ -75,9 +87,25 @@ export default function Dashboard({ applications, selectedJobs, profile, onViewC
 
       <div className="flex flex-wrap justify-center gap-3">
         {onInterview && applications.length > 0 && (
-          <button onClick={() => onInterview(applications[0].job)} className="btn-secondary text-sm py-2 px-4 flex items-center gap-2">
-            <FiMessageCircle className="w-4 h-4" /> Interview Prep
-          </button>
+          <div className="relative">
+            <button onClick={() => setShowInterviewDropdown(!showInterviewDropdown)} className="btn-secondary text-sm py-2 px-4 flex items-center gap-2">
+              <FiMessageCircle className="w-4 h-4" /> Interview Prep
+            </button>
+            {showInterviewDropdown && (
+              <div className="absolute top-full mt-2 left-0 bg-dark-800 border border-white/10 rounded-xl shadow-xl z-20 min-w-[250px] max-h-[300px] overflow-y-auto">
+                {applications.map((app, i) => (
+                  <button
+                    key={i}
+                    onClick={() => { onInterview(app.job); setShowInterviewDropdown(false) }}
+                    className="w-full text-left px-4 py-3 hover:bg-white/10 transition-colors text-sm border-b border-white/5 last:border-0"
+                  >
+                    <p className="text-white font-medium truncate">{app.job.title}</p>
+                    <p className="text-white/40 text-xs truncate">{app.job.company}</p>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         )}
         {onViewChange && (
           <>

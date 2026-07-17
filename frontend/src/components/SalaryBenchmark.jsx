@@ -25,7 +25,7 @@ export default function SalaryBenchmark({ profile }) {
     }
   }
 
-  const formatSalary = (n) => '$' + (n || 0).toLocaleString()
+  const formatSalary = (n) => 'R' + (n || 0).toLocaleString()
 
   return (
     <div className="space-y-6">
@@ -48,7 +48,7 @@ export default function SalaryBenchmark({ profile }) {
             <label className="text-white/60 text-sm flex items-center gap-2">
               <FiMapPin className="w-4 h-4" /> Location
             </label>
-            <input value={location} onChange={e => setLocation(e.target.value)} placeholder="e.g., New York" className="input-field" />
+            <input value={location} onChange={e => setLocation(e.target.value)} placeholder="e.g., Johannesburg" className="input-field" />
           </div>
           <div className="space-y-1.5">
             <label className="text-white/60 text-sm flex items-center gap-2">

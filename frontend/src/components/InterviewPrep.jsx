@@ -35,7 +35,14 @@ export default function InterviewPrep({ cvData, job, onBack }) {
     )
   }
 
-  if (!prep) return <div className="glass-card p-5 sm:p-8 text-center text-white/40">Could not load interview prep</div>
+  if (!prep) return (
+    <div className="glass-card p-5 sm:p-8 text-center text-white/40 space-y-4">
+      <p>Could not load interview prep</p>
+      <button onClick={() => window.location.reload()} className="btn-secondary text-sm py-2 px-4">
+        Try Again
+      </button>
+    </div>
+  )
 
   const tabs = [
     { key: 'technical', label: 'Technical', icon: FiCpu, count: prep.technicalQuestions?.length },

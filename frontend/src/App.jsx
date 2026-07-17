@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect, useMemo } from 'react'
 import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import Header from './components/Header'
@@ -19,22 +19,76 @@ import Chatbot from './components/Chatbot'
 const STEPS = ['Upload CV', 'Evaluate', 'Your Profile', 'Find Jobs', 'Applications']
 
 function App() {
-  const [view, setView] = useState('landing')
-  const [currentStep, setCurrentStep] = useState(0)
-  const [cvData, setCvData] = useState(null)
-  const [qualifications, setQualifications] = useState({
-    fullName: '', email: '', phone: '', location: '',
-    targetRole: '', targetIndustry: '', yearsExperience: '',
-    skills: [], education: [], languages: [], certifications: [],
-    salaryExpectation: '', workPreference: 'remote', availableFrom: '',
+  const [view, setView] = useState(() => {
+    try { return localStorage.getItem('jobai_view') || 'landing' } catch { return 'landing' }
   })
-  const [jobs, setJobs] = useState([])
-  const [selectedJobs, setSelectedJobs] = useState([])
-  const [applications, setApplications] = useState([])
+  const [currentStep, setCurrentStep] = useState(() => {
+    try { return parseInt(localStorage.getItem('jobai_step')) || 0 } catch { return 0 }
+  })
+  const [cvData, setCvData] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('jobai_cvData')) || null } catch { return null }
+  })
+  const [qualifications, setQualifications] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('jobai_qualifications'))
+      return saved || {
+        fullName: '', email: '', phone: '', location: '',
+        targetRole: '', targetIndustry: '', yearsExperience: '',
+        skills: [], education: [], languages: [], certifications: [],
+        salaryExpectation: '', workPreference: 'remote', availableFrom: '',
+      }
+    } catch {
+      return {
+        fullName: '', email: '', phone: '', location: '',
+        targetRole: '', targetIndustry: '', yearsExperience: '',
+        skills: [], education: [], languages: [], certifications: [],
+        salaryExpectation: '', workPreference: 'remote', availableFrom: '',
+      }
+    }
+  })
+  const [jobs, setJobs] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('jobai_jobs')) || [] } catch { return [] }
+  })
+  const [selectedJobs, setSelectedJobs] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('jobai_selectedJobs')) || [] } catch { return [] }
+  })
+  const [applications, setApplications] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('jobai_applications')) || [] } catch { return [] }
+  })
   const [isSearching, setIsSearching] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
   const [dashboardView, setDashboardView] = useState('applications')
   const [interviewJob, setInterviewJob] = useState(null)
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('jobai_view', view)
+      localStorage.setItem('jobai_step', currentStep)
+      if (cvData) localStorage.setItem('jobai_cvData', JSON.stringify(cvData))
+      localStorage.setItem('jobai_qualifications', JSON.stringify(qualifications))
+      if (jobs.length > 0) localStorage.setItem('jobai_jobs', JSON.stringify(jobs))
+      if (selectedJobs.length > 0) localStorage.setItem('jobai_selectedJobs', JSON.stringify(selectedJobs))
+      if (applications.length > 0) localStorage.setItem('jobai_applications', JSON.stringify(applications))
+    } catch {}
+  }, [view, currentStep, cvData, qualifications, jobs, selectedJobs, applications])
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const hash = window.location.hash
+      if (hash) {
+        const step = parseInt(hash.replace('#step-', ''))
+        if (!isNaN(step) && step >= 0 && step <= 4) setCurrentStep(step)
+      }
+    }
+    window.addEventListener('popstate', handlePopState)
+    if (window.location.hash) handlePopState()
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [])
+
+  const setCurrentStepWithHistory = useCallback((step) => {
+    setCurrentStep(step)
+    window.history.pushState(null, '', `#step-${step}`)
+  }, [])
 
   const handleCVUpload = useCallback((data) => {
     setCvData(data)
@@ -51,13 +105,13 @@ function App() {
       education: data.education?.length > 0 ? data.education : prev.education,
     }))
     toast.success('CV parsed successfully!', { theme: 'dark' })
-    setTimeout(() => setCurrentStep(1), 500)
-  }, [])
+    setTimeout(() => setCurrentStepWithHistory(1), 500)
+  }, [setCurrentStepWithHistory])
 
   const handleUseOriginal = useCallback(() => {
     toast.info('Continuing with your original CV', { theme: 'dark' })
-    setCurrentStep(2)
-  }, [])
+    setCurrentStepWithHistory(2)
+  }, [setCurrentStepWithHistory])
 
   const handleUseTemplate = useCallback((template) => {
     const header = template.sections.find(s => s.title === 'header')?.content || {}
@@ -72,8 +126,8 @@ function App() {
     }
     setCvData(templateData)
     toast.success(`Using "${template.name}" template — PDF downloaded!`, { theme: 'dark' })
-    setCurrentStep(2)
-  }, [cvData])
+    setCurrentStepWithHistory(2)
+  }, [cvData, setCurrentStepWithHistory])
 
   const handleQualificationsSubmit = useCallback((data) => {
     setQualifications(prev => ({
@@ -84,8 +138,8 @@ function App() {
       yearsExperience: cvData?.experience || prev.yearsExperience,
     }))
     toast.success('Profile saved!', { theme: 'dark' })
-    setCurrentStep(3)
-  }, [cvData])
+    setCurrentStepWithHistory(3)
+  }, [cvData, setCurrentStepWithHistory])
 
   const handleSearchJobs = useCallback(async () => {
     setIsSearching(true)
@@ -124,7 +178,7 @@ function App() {
       const data = await response.json()
       setApplications(data.applications)
       toast.success('Applications generated!', { theme: 'dark' })
-      setCurrentStep(4)
+      setCurrentStepWithHistory(4)
     } catch (err) {
       toast.error('Failed to generate applications.', { theme: 'dark' })
     } finally {
@@ -144,21 +198,24 @@ function App() {
     setSelectedJobs(prev => prev.length === jobs.length ? [] : [...jobs])
   }, [jobs])
 
-  const goToStep = (step) => {
-    if (step < currentStep) setCurrentStep(step)
-  }
+  const goToStep = useCallback((step) => {
+    if (step <= currentStep) {
+      setCurrentStep(step)
+      window.history.pushState(null, '', `#step-${step}`)
+    }
+  }, [currentStep])
 
-  const handleOpenInterview = (job) => {
+  const handleOpenInterview = useCallback((job) => {
     setInterviewJob(job)
     setDashboardView('interview')
-  }
+  }, [])
 
-  const handleBackFromInterview = () => {
+  const handleBackFromInterview = useCallback(() => {
     setInterviewJob(null)
     setDashboardView('applications')
-  }
+  }, [])
 
-  const profile = { ...qualifications, ...cvData }
+  const profile = useMemo(() => ({ ...qualifications, ...cvData }), [qualifications, cvData])
 
   const renderStep = () => {
     switch (currentStep) {

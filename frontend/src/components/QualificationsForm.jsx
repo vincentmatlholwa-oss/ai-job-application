@@ -178,11 +178,11 @@ export default function QualificationsForm({ data, cvData, onSubmit }) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <label className="text-white/60 text-sm flex items-center gap-2">
-              <FiDollarSign className="w-4 h-4" /> Salary Expectation (USD/year)
+              <FiDollarSign className="w-4 h-4" /> Salary Expectation (ZAR/month)
             </label>
             <input
               type="text"
-              placeholder="e.g., 80,000 - 120,000"
+              placeholder="e.g., 25,000 - 45,000"
               value={form.salaryExpectation}
               onChange={e => setForm(p => ({ ...p, salaryExpectation: e.target.value }))}
               className="input-field"

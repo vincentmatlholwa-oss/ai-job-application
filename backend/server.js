@@ -2,6 +2,8 @@ import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
 import multer from 'multer'
+import helmet from 'helmet'
+import rateLimit from 'express-rate-limit'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 
@@ -11,17 +13,37 @@ const __dirname = dirname(__filename)
 const app = express()
 const PORT = process.env.PORT || 3009
 
-app.use(cors())
-app.use(express.json({ limit: '50mb' }))
+const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || '*'
+app.use(helmet({ contentSecurityPolicy: false }))
+app.use(cors(ALLOWED_ORIGIN === '*' ? {} : { origin: ALLOWED_ORIGIN }))
+app.use(express.json({ limit: '5mb' }))
+
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests, please try again later.' },
+})
 
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 },
 })
 
+let openaiClient = null
+async function getOpenAI() {
+  if (!openaiClient && process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'your_openai_api_key_here') {
+    const { default: OpenAI } = await import('openai')
+    openaiClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  }
+  return openaiClient
+}
+
 // ============================================
 // CV PARSING ENDPOINT
 // ============================================
+app.use('/api', apiLimiter)
 app.post('/api/parse-cv', upload.single('cv'), async (req, res) => {
   try {
     if (!req.file) {
@@ -765,8 +787,8 @@ app.post('/api/search-jobs', async (req, res) => {
 })
 
 async function searchJobsWithAI(profile) {
-  const { default: OpenAI } = await import('openai')
-  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  const openai = await getOpenAI()
+  if (!openai) return generateSampleJobs(profile)
 
   const prompt = `Based on this job seeker profile, generate 8-12 realistic job listings in South Africa that would be good matches.
 
@@ -933,12 +955,10 @@ app.post('/api/generate-applications', async (req, res) => {
 })
 
 async function generateApplicationsWithAI(profile, jobs) {
-  const { default: OpenAI } = await import('openai')
-  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  const openai = await getOpenAI()
+  if (!openai) return generateSampleApplications(profile, jobs)
 
-  const applications = []
-
-  for (const job of jobs) {
+  const generateOne = async (job) => {
     const prompt = `Generate a professional job application package.
 
 CANDIDATE:
@@ -977,22 +997,23 @@ Return ONLY valid JSON.`
       const jsonMatch = content.match(/\{[\s\S]*\}/)
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0])
-        applications.push({
+        return {
           job,
           coverLetter: parsed.coverLetter || '',
           motivationalLetter: parsed.motivationalLetter || '',
           emailDraft: parsed.emailDraft || '',
-        })
-        continue
+          aiGenerated: true,
+        }
       }
     } catch {
       // fallback below
     }
 
-    applications.push(generateSingleApplication(profile, job))
+    return { ...generateSingleApplication(profile, job), aiGenerated: false }
   }
 
-  return applications
+  const results = await Promise.allSettled(jobs.map(generateOne))
+  return results.map((r, i) => r.status === 'fulfilled' ? r.value : { ...generateSingleApplication(profile, jobs[i]), aiGenerated: false })
 }
 
 function generateSampleApplications(profile, jobs) {
@@ -1560,37 +1581,46 @@ function getSalaryBenchmark(role, location, experience) {
   const exp = parseInt(experience) || 3
 
   const salaryData = {
-    'software engineer': { base: 95000, variance: 35000 },
-    'data scientist': { base: 100000, variance: 30000 },
-    'product manager': { base: 110000, variance: 40000 },
-    'devops engineer': { base: 105000, variance: 30000 },
-    'ux designer': { base: 85000, variance: 25000 },
-    'project manager': { base: 80000, variance: 25000 },
-    'business analyst': { base: 75000, variance: 20000 },
-    'systems administrator': { base: 70000, variance: 20000 },
-    'network engineer': { base: 72000, variance: 18000 },
-    'cyber security': { base: 95000, variance: 35000 },
-    'cloud engineer': { base: 110000, variance: 30000 },
-    'frontend developer': { base: 85000, variance: 25000 },
-    'backend developer': { base: 95000, variance: 30000 },
-    'full stack developer': { base: 100000, variance: 30000 },
-    'mobile developer': { base: 95000, variance: 25000 },
-    'machine learning': { base: 115000, variance: 35000 },
-    'it support': { base: 45000, variance: 15000 },
-    'database administrator': { base: 80000, variance: 20000 },
+    'software engineer': { base: 45000, variance: 18000 },
+    'data scientist': { base: 50000, variance: 20000 },
+    'product manager': { base: 55000, variance: 22000 },
+    'devops engineer': { base: 52000, variance: 20000 },
+    'ux designer': { base: 38000, variance: 15000 },
+    'project manager': { base: 42000, variance: 16000 },
+    'business analyst': { base: 38000, variance: 14000 },
+    'systems administrator': { base: 35000, variance: 12000 },
+    'network engineer': { base: 36000, variance: 13000 },
+    'cyber security': { base: 48000, variance: 20000 },
+    'cloud engineer': { base: 52000, variance: 18000 },
+    'frontend developer': { base: 40000, variance: 15000 },
+    'backend developer': { base: 45000, variance: 18000 },
+    'full stack developer': { base: 48000, variance: 20000 },
+    'mobile developer': { base: 45000, variance: 17000 },
+    'machine learning': { base: 55000, variance: 22000 },
+    'it support': { base: 20000, variance: 8000 },
+    'database administrator': { base: 40000, variance: 14000 },
+    'network technician': { base: 22000, variance: 8000 },
+    'web developer': { base: 35000, variance: 14000 },
+    'graphic designer': { base: 25000, variance: 10000 },
+    'content writer': { base: 20000, variance: 8000 },
+    'marketing': { base: 30000, variance: 12000 },
+    'accountant': { base: 32000, variance: 12000 },
+    'hr manager': { base: 38000, variance: 14000 },
   }
 
   let matched = null
   for (const [key, val] of Object.entries(salaryData)) {
     if (roleLower.includes(key)) { matched = val; break }
   }
-  if (!matched) matched = { base: 75000, variance: 25000 }
+  if (!matched) matched = { base: 35000, variance: 14000 }
 
-  // Location multipliers
   const locationMultipliers = {
-    'san francisco': 1.4, 'new york': 1.3, 'seattle': 1.25, 'boston': 1.2,
-    'los angeles': 1.15, 'chicago': 1.05, 'austin': 1.1, 'denver': 1.05,
-    'remote': 1.0, 'london': 1.15, 'berlin': 0.9, 'dubai': 1.1,
+    'johannesburg': 1.15, 'joburg': 1.15, 'gauteng': 1.12, 'cape town': 1.1, 'pretoria': 1.05,
+    'durban': 1.0, 'kwazulu-natal': 1.0, 'stellenbosch': 1.05, 'centurion': 1.05,
+    'sandton': 1.2, 'rosebank': 1.15, 'midrand': 1.08, 'randburg': 1.05,
+    'port elizabeth': 0.95, 'east london': 0.9, 'polokwane': 0.85, 'bloemfontein': 0.9,
+    'rustenburg': 0.95, 'nelspruit': 0.9, 'kimberley': 0.85, 'potchefstroom': 0.9,
+    'remote': 1.0, 'remote (sa)': 1.0,
   }
 
   let multiplier = 1.0
@@ -1599,8 +1629,7 @@ function getSalaryBenchmark(role, location, experience) {
     if (locLower.includes(key)) { multiplier = mult; break }
   }
 
-  // Experience multiplier
-  const expMultiplier = exp <= 2 ? 0.8 : exp <= 5 ? 1.0 : exp <= 8 ? 1.15 : exp <= 12 ? 1.3 : 1.45
+  const expMultiplier = exp <= 2 ? 0.75 : exp <= 5 ? 1.0 : exp <= 8 ? 1.15 : exp <= 12 ? 1.3 : 1.45
 
   const adjustedBase = Math.round(matched.base * multiplier * expMultiplier)
   const variance = Math.round(matched.variance * multiplier)
@@ -1624,13 +1653,13 @@ function getSalaryBenchmark(role, location, experience) {
     },
     factors: [
       `${experience || 0} years of experience`,
-      `Location: ${location || 'National'}`,
+      `Location: ${location || 'National (SA)'}`,
       'Industry demand',
       'Specific technical skills',
     ],
-    tip: exp < 3 ? 'Consider certifications to boost your earning potential.' :
-         exp < 7 ? 'Your experience level is competitive - negotiate aggressively.' :
-         'At your seniority level, total compensation (equity, bonus) matters more than base salary.',
+    tip: exp < 3 ? 'Consider certifications like CompTIA, AWS, or Microsoft to boost your earning potential.' :
+         exp < 7 ? 'Your experience level is competitive in the SA market — negotiate aggressively, especially in Johannesburg/Cape Town.' :
+         'At your seniority level, consider total packages including medical aid, provident fund, and remote work options.',
   }
 }
 
