@@ -1,7 +1,7 @@
 {
   "name": "ai-job-application",
   "version": "1.0.0",
-  "description": "AI-powered auto job application assistant by Vincent Matlholwa",
+  "description": "AI-powered auto job application assistant by Coding Predators",
   "scripts": {
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "client": "cd frontend && npm run dev",
@@ -16,6 +16,6 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "author": "Vincent Matlholwa",
+  "author": "Coding Predators",
   "license": "MIT"
 }

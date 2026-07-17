@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { FiMessageCircle, FiX, FiSend, FiCpu, FiUser, FiMinimize2, FiMaximize2 } from 'react-icons/fi'
 
 const APP_KNOWLEDGE = {
-  greeting: "Hello! I'm JobAI Assistant, built by Vincent Matlholwa. I can help you with everything about this app - uploading your CV, searching for jobs, generating cover letters, and more. What would you like help with?",
+  greeting: "Hello! I'm JobAI Assistant, built by Coding Predators. I can help you with everything about this app - uploading your CV, searching for jobs, generating cover letters, and more. What would you like help with?",
 
   topics: {
     'upload|cv|resume|pdf|file': {
@@ -26,7 +26,7 @@ const APP_KNOWLEDGE = {
       followUp: "Need help with anything else?"
     },
     'chatbot|ai|assistant|help|feature': {
-      answer: "**About This App - JobAI by Vincent Matlholwa**\n\nJobAI is an AI-powered job application assistant that:\n\n- Parses your CV automatically using AI\n- Searches multiple job boards simultaneously\n- Matches jobs to your profile with % scores\n- Generates personalized cover letters, motivational letters, and email drafts\n- Provides direct apply links for online applications\n- Works beautifully on mobile devices\n\nThe app uses GPT-4o-mini for intelligent job matching and letter generation. Even without an API key, it provides sample jobs and templates.",
+      answer: "**About This App - JobAI by Coding Predators**\n\nJobAI is an AI-powered job application assistant that:\n\n- Parses your CV automatically using AI\n- Searches multiple job boards simultaneously\n- Matches jobs to your profile with % scores\n- Generates personalized cover letters, motivational letters, and email drafts\n- Provides direct apply links for online applications\n- Works beautifully on mobile devices\n\nThe app uses GPT-4o-mini for intelligent job matching and letter generation. Even without an API key, it provides sample jobs and templates.",
       followUp: "What specific feature would you like to learn more about?"
     },
     'mobile|responsive|phone|tablet': {
@@ -42,7 +42,7 @@ const APP_KNOWLEDGE = {
       followUp: "Would you like advice on any specific aspect?"
     },
     'who|creator|author|made|built': {
-      answer: "**Created by Vincent Matlholwa**\n\nThis AI Job Application Assistant was built by **Vincent Matlholwa** as a comprehensive tool to help job seekers automate and optimize their job search process.\n\nThe app combines modern web technologies with AI to create a seamless experience for finding and applying to jobs.",
+      answer: "**Created by Coding Predators**\n\nThis AI Job Application Assistant was built by **Coding Predators** as a comprehensive tool to help job seekers automate and optimize their job search process.\n\nThe app combines modern web technologies with AI to create a seamless experience for finding and applying to jobs.",
       followUp: "Is there anything else you'd like to know?"
     },
     'thanks|thank': {
@@ -234,7 +234,7 @@ export default function Chatbot() {
               </div>
               <div>
                 <h3 className="text-white font-semibold text-sm sm:text-base">JobAI Assistant</h3>
-                <p className="text-green-400 text-xs">Online \u2022 Built by Vincent Matlholwa</p>
+                <p className="text-green-400 text-xs">Online \u2022 Built by Coding Predators</p>
               </div>
             </div>
             <div className="flex items-center gap-1">
@@ -377,7 +377,7 @@ export default function Chatbot() {
                   </button>
                 </form>
                 <p className="text-center text-white/15 text-[10px] mt-2">
-                  Powered by AI \u2022 Vincent Matlholwa
+                  Powered by AI \u2022 Coding Predators
                 </p>
               </div>
             </>

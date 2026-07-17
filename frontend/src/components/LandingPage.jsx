@@ -184,7 +184,7 @@ export default function LandingPage({ onGetStarted }) {
       <footer className="relative z-10 border-t border-white/5">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <span className="text-white/30 text-sm">&copy; {new Date().getFullYear()} Vincent Matlholwa. All rights reserved.</span>
+            <span className="text-white/30 text-sm">&copy; {new Date().getFullYear()} Coding Predators. All rights reserved.</span>
             <a
               href="https://wa.me/27677834591"
               target="_blank"

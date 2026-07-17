@@ -1,8 +1,8 @@
 @echo off
-title AI Job Application - Vincent Matlholwa
+title AI Job Application - Coding Predators
 echo ============================================
 echo   AI Job Application Assistant
-echo   by Vincent Matlholwa
+echo   by Coding Predators
 echo ============================================
 echo.
 echo Starting on http://localhost:3009

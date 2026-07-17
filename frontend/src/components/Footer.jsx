@@ -6,13 +6,13 @@ export default function Footer() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2 text-white/30 text-sm">
-            <span>&copy; {new Date().getFullYear()} Vincent Matlholwa. All rights reserved.</span>
+            <span>&copy; {new Date().getFullYear()} Coding Predators. All rights reserved.</span>
           </div>
           <div className="flex items-center gap-1 text-white/30 text-sm">
             <span>Built with</span>
             <FiHeart className="w-3.5 h-3.5 text-red-400 fill-red-400" />
             <span>by</span>
-            <span className="gradient-text font-semibold">Vincent Matlholwa</span>
+            <span className="gradient-text font-semibold">Coding Predators</span>
           </div>
           <a
             href="https://wa.me/27677834591"
